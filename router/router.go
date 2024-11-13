@@ -10,7 +10,7 @@ import (
 )
 
 // Middleware defines the type for middleware functions.
-type Middleware func(http.Handler) http.Handler
+type Middleware func(http.ResponseWriter, *http.Request, http.HandlerFunc) error
 
 // Route represents a single route.
 type Route struct {
@@ -88,46 +88,47 @@ func (r *Router) Group(prefix string, middlewares ...Middleware) *Group {
 
 // RegisterRoutes registers all routes and applies middlewares, both global and group-specific.
 func (r *Router) RegisterRoutes() {
-	// Register group routes first
 	for _, group := range r.groups {
-		// Create group routes with their prefix and middlewares
 		for _, route := range group.Routes {
 			handler := route.HandlerFunc
 
-			// Apply global middlewares
-			for _, mw := range r.globalMiddlewares {
-				handler = wrapMiddleware(handler, mw)
-			}
+			handler = wrapWithMiddlewares(handler, r.globalMiddlewares...)
+			handler = wrapWithMiddlewares(handler, group.Middlewares...)
+			handler = wrapWithMiddlewares(handler, route.Middlewares...)
 
-			// Apply group middlewares
-			for _, mw := range group.Middlewares {
-				handler = wrapMiddleware(handler, mw)
-			}
-
-			// Register the group route in the mux with its prefix
-			r.mux.HandleFunc(fmt.Sprintf("%s %s", route.Method, group.Prefix+route.Path), handler)
+			r.mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), handler)
 		}
 	}
 
-	// Register routes without group prefix
 	for _, route := range r.routes {
 		handler := route.HandlerFunc
-
-		// Apply global middlewares
-		for _, mw := range r.globalMiddlewares {
-			handler = wrapMiddleware(handler, mw)
-		}
-
-		// Register the route without group
-		r.mux.HandleFunc(fmt.Sprintf("%s %s", route.Method, route.Path), handler)
+		handler = wrapWithMiddlewares(handler, r.globalMiddlewares...)
+		handler = wrapWithMiddlewares(handler, route.Middlewares...)
+		r.mux.HandleFunc(route.Path, handler)
 	}
 }
 
-// wrapMiddleware applies the middleware to a handler and performs the appropriate conversion.
-func wrapMiddleware(handler http.HandlerFunc, mw Middleware) http.HandlerFunc {
+// wrapMiddleware wraps a single middleware function around the handler.
+func wrapWithMiddlewares(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Convert http.HandlerFunc to http.Handler and then apply the middleware
-		mw(http.HandlerFunc(handler)).ServeHTTP(w, r)
+		var next http.HandlerFunc
+
+		next = handler
+
+		for i := len(middlewares) - 1; i >= 0; i-- {
+			middleware := middlewares[i]
+			next = func(handler http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					if err := middleware(w, r, handler); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+				}
+			}(next)
+		}
+
+		// Execute the composed middlewares and finally the handler
+		next(w, r)
 	})
 }
 
