@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 )
 
 func main() {
+	config.LoadConfig(".")
+
 	server := http.NewServeMux()
 
 	r := router.New(server)
@@ -16,7 +19,9 @@ func main() {
 
 	r.RegisterRoutes()
 
-	fmt.Println("Server is running on port 8080")
+	env := config.GetConfig()
 
-	r.Listen(":8080")
+	fmt.Println("Server is running on port", env.Port)
+
+	r.Listen(fmt.Sprint(":", env.Port))
 }
