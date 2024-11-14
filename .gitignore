@@ -18,3 +18,6 @@ vendor/
 go.work
 
 .Ds_Store
+
+# Development stuff
+tmp/
