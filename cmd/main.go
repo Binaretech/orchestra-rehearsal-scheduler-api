@@ -3,17 +3,24 @@ package main
 import (
 	"net/http"
 
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 )
 
 func main() {
 	server := http.NewServeMux()
 
-	r := router.New(server)
+	r := router.New()
 
-	router.Routes(r)
+	r.RegisterRoutes(server)
 
-	r.RegisterRoutes()
+	http.ListenAndServe(":8080", server)
+}
 
-	r.Listen(":8080")
+func RegisterHandlers(router *router.Router, handlers ...handler.Handler) {
+	protected := router.Group("/")
+	for _, h := range handlers {
+		h.Register(router)
+		h.RegisterProtected(protected)
+	}
 }

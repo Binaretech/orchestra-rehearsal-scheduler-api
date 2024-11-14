@@ -27,20 +27,50 @@ type Group struct {
 	Routes      []Route      // Specific routes of the group
 }
 
+// Get allows registering a GET route on the group.
+func (g *Group) Get(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+	g.addRoute(http.MethodGet, path, handlerFunc, middlewares...)
+}
+
+// Post allows registering a POST route on the group.
+func (g *Group) Post(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+	g.addRoute(http.MethodPost, path, handlerFunc, middlewares...)
+}
+
+// Put allows registering a PUT route on the group.
+func (g *Group) Put(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+	g.addRoute(http.MethodPut, path, handlerFunc, middlewares...)
+}
+
+// Delete allows registering a DELETE route on the group.
+func (g *Group) Delete(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+	g.addRoute(http.MethodDelete, path, handlerFunc, middlewares...)
+}
+
+// addRoute adds a new route to the group.
+func (g *Group) addRoute(method, path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+	route := Route{
+		Method:      method,
+		Path:        path,
+		HandlerFunc: handlerFunc,
+		Middlewares: middlewares,
+	}
+
+	g.Routes = append(g.Routes, route)
+}
+
 // Router is an abstraction over the default ServeMux.
 type Router struct {
-	mux               *http.ServeMux // HTTP mux to handle routes
-	routes            []Route        // Registered routes
-	globalMiddlewares []Middleware   // Global middlewares applied to all routes
-	groups            []Group        // Route groups with prefixes
+	routes            []Route      // Registered routes
+	globalMiddlewares []Middleware // Global middlewares applied to all routes
+	groups            []*Group     // Route groups with prefixes
 }
 
 // New creates a new instance of Router.
-func New(mux *http.ServeMux) *Router {
+func New() *Router {
 	return &Router{
-		mux:               mux,
 		globalMiddlewares: []Middleware{}, // Initialize without global middlewares
-		groups:            []Group{},      // Initialize without route groups
+		groups:            []*Group{},     // Initialize without route groups
 	}
 }
 
@@ -82,12 +112,12 @@ func (r *Router) Group(prefix string, middlewares ...Middleware) *Group {
 		Prefix:      prefix,
 		Middlewares: middlewares,
 	}
-	r.groups = append(r.groups, *group)
+	r.groups = append(r.groups, group)
 	return group
 }
 
 // RegisterRoutes registers all routes and applies middlewares, both global and group-specific.
-func (r *Router) RegisterRoutes() {
+func (r *Router) RegisterRoutes(mux *http.ServeMux) {
 	for _, group := range r.groups {
 		for _, route := range group.Routes {
 			handler := route.HandlerFunc
@@ -96,7 +126,7 @@ func (r *Router) RegisterRoutes() {
 			handler = wrapWithMiddlewares(handler, group.Middlewares...)
 			handler = wrapWithMiddlewares(handler, route.Middlewares...)
 
-			r.mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), handler)
+			mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), handler)
 		}
 	}
 
@@ -104,7 +134,7 @@ func (r *Router) RegisterRoutes() {
 		handler := route.HandlerFunc
 		handler = wrapWithMiddlewares(handler, r.globalMiddlewares...)
 		handler = wrapWithMiddlewares(handler, route.Middlewares...)
-		r.mux.HandleFunc(route.Path, handler)
+		mux.HandleFunc(route.Path, handler)
 	}
 }
 
@@ -132,18 +162,7 @@ func wrapWithMiddlewares(handler http.HandlerFunc, middlewares ...Middleware) ht
 	})
 }
 
-// HandleRequest starts the server and listens for requests on the given port.
-func (r *Router) HandleRequest(addr string) error {
-	r.RegisterRoutes()
-	return http.ListenAndServe(addr, r.mux)
-}
-
 // AddMiddleware adds a global middleware that applies to all routes.
 func (r *Router) AddMiddleware(mw Middleware) {
 	r.globalMiddlewares = append(r.globalMiddlewares, mw)
-}
-
-// Listen starts the server and listens for requests on the given port.
-func (r *Router) Listen(addr string) error {
-	return http.ListenAndServe(addr, r.mux)
 }
