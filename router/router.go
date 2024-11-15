@@ -202,3 +202,9 @@ func (c *Context) JSON(status int, data any) error {
 	c.response.WriteHeader(status)
 	return json.NewEncoder(c.response).Encode(data)
 }
+func (c *Context) Parse(data any) error {
+	if c.request.ContentLength == 0 {
+		return nil
+	}
+	return json.NewDecoder(c.request.Body).Decode(data)
+}
