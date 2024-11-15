@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"path"
 
@@ -35,14 +36,16 @@ var AppConfig *Config
 
 func LoadConfig(configPath string) *Config {
 	viper.AddConfigPath(configPath)
-	viper.SetConfigName("config")
 	viper.SetConfigType("env")
+	viper.SetConfigFile(".env")
 
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		switch err.(type) {
+		case viper.ConfigFileNotFoundError:
+		case *fs.PathError:
 			viper.SetDefault("DATABASE_HOST", "localhost")
 			viper.SetDefault("DATABASE_PORT", "5432")
 			viper.SetDefault("DATABASE_USER", "postgres")
@@ -51,14 +54,17 @@ func LoadConfig(configPath string) *Config {
 			viper.SetDefault("PORT", "8080")
 			viper.SetDefault("TOKEN_SECRET", GenerateTokenSecret())
 
-			err = viper.WriteConfigAs(path.Join(configPath, "config.env"))
+			err = viper.WriteConfigAs(path.Join(configPath, ".env"))
 
 			if err != nil {
 				log.Fatalf("Error writing config file, %s", err)
 			}
-		} else {
+			break
+		default:
 			log.Printf("Error reading config file, %s", err)
+			break
 		}
+
 	}
 
 	err = viper.Unmarshal(&AppConfig)
@@ -70,6 +76,7 @@ func LoadConfig(configPath string) *Config {
 		fmt.Println("Config file changed:", e.Name)
 		fmt.Println("Server is running on port", viper.Get("PORT"))
 	})
+
 	viper.WatchConfig()
 
 	return AppConfig

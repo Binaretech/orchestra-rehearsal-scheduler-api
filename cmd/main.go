@@ -9,6 +9,22 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 )
 
+const asciiArt = `
+  ____  _____   _____ _    _ ______  _____ _______ _____
+/  __ \|  __ \ / ____| |  | |  ____|/ ____|__   __|  __  \    /\
+| |  | | |__) | |    | |__| | |__  | (___    | |  | |__) |   /  \
+| |  | |  _  /| |    |  __  |  __|  \___ \   | |  |  _  /   / /\ \
+| |__| | | \ \| |____| |  | | |____ ____) |  | |  | | \ \  / ____ \
+ \____/|_|  \_\\_____|_|  |_|______|_____/   |_|  |_|  \_\/_/    \_\
+
+   _____      __             __      __         ___    ____  ____
+  / ___/_____/ /_  ___  ____/ /_  __/ /__  ____/   |  / __ \/  _/
+  \__ \/ ___/ __ \/ _ \/ __  / / / / / _ \/ __/ /| | / /_/ // /
+ ___/ / /__/ / / /  __/ /_/ / /_/ / /  __/ / / ___ |/ ____// /
+/____/\___/_/ /_/\___/\__,_/\__,_/_/\___/_/ /_/  |_/_/   /___/
+
+================================================================`
+
 func main() {
 	cnf := config.LoadConfig(".")
 
@@ -18,8 +34,13 @@ func main() {
 
 	r.RegisterRoutes(server)
 
+	fmt.Println(asciiArt)
 	fmt.Println("Server is running on port", cnf.Port)
-	http.ListenAndServe(fmt.Sprintf(":%s", cnf.Port), server)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", cnf.Port), server)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func RegisterHandlers(router *router.Router, handlers ...handler.Handler) {

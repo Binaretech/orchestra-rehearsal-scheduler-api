@@ -2,15 +2,15 @@ services:
     app:
         build: .
         ports:
-            - "8000:8000"
+            - ${PORT:-8080}:${PORT:-8080}
         volumes:
             - .:/app
     db:
         image: postgres:15
         environment:
-            POSTGRES_USER: user
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: dbname
+            POSTGRES_USER: ${DATABASE_USER:-postgres}
+            POSTGRES_PASSWORD: ${DATABASE_PASS:-secret}
+            POSTGRES_DB: ${DATABASE_NAME:-scheduler}
         ports:
             - "5432:5432"
         volumes:
