@@ -8,8 +8,8 @@ import (
 )
 
 type Handler interface {
-	Register(router *router.Router)
-	RegisterProtected(grouo *router.Group)
+	Register(r *router.Router)
+	RegisterProtected(group *router.Group)
 }
 
 func ResponseJson(w http.ResponseWriter, statusCode int, data any) {

@@ -5,19 +5,23 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
 // Middleware defines the type for middleware functions.
-type Middleware func(http.ResponseWriter, *http.Request, http.HandlerFunc) error
+type Middleware func(*Context, HandlerFunc) error
+
+// HandlerFunc defines the type for handler functions that use Context.
+type HandlerFunc func(*Context) error
 
 // Route represents a single route.
 type Route struct {
-	Method      string           // HTTP method (GET, POST, PUT, DELETE, etc.)
-	Path        string           // URL path for the route
-	HandlerFunc http.HandlerFunc // Handler function to process the request
-	Middlewares []Middleware     // Middlewares specific to this route
+	Method      string       // HTTP method (GET, POST, PUT, DELETE, etc.)
+	Path        string       // URL path for the route
+	HandlerFunc HandlerFunc  // Handler function to process the request
+	Middlewares []Middleware // Middlewares specific to this route
 }
 
 // Group represents a group of routes with a common prefix and shared middlewares.
@@ -28,27 +32,27 @@ type Group struct {
 }
 
 // Get allows registering a GET route on the group.
-func (g *Group) Get(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (g *Group) Get(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	g.addRoute(http.MethodGet, path, handlerFunc, middlewares...)
 }
 
 // Post allows registering a POST route on the group.
-func (g *Group) Post(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (g *Group) Post(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	g.addRoute(http.MethodPost, path, handlerFunc, middlewares...)
 }
 
 // Put allows registering a PUT route on the group.
-func (g *Group) Put(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (g *Group) Put(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	g.addRoute(http.MethodPut, path, handlerFunc, middlewares...)
 }
 
 // Delete allows registering a DELETE route on the group.
-func (g *Group) Delete(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (g *Group) Delete(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	g.addRoute(http.MethodDelete, path, handlerFunc, middlewares...)
 }
 
 // addRoute adds a new route to the group.
-func (g *Group) addRoute(method, path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (g *Group) addRoute(method, path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	route := Route{
 		Method:      method,
 		Path:        path,
@@ -75,33 +79,35 @@ func New() *Router {
 }
 
 // Get allows registering a GET route.
-func (r *Router) Get(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (r *Router) Get(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	r.addRoute(http.MethodGet, path, handlerFunc, middlewares...)
 }
 
 // Post allows registering a POST route.
-func (r *Router) Post(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (r *Router) Post(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	r.addRoute(http.MethodPost, path, handlerFunc, middlewares...)
 }
 
 // Put allows registering a PUT route.
-func (r *Router) Put(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (r *Router) Put(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	r.addRoute(http.MethodPut, path, handlerFunc, middlewares...)
 }
 
 // Delete allows registering a DELETE route.
-func (r *Router) Delete(path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (r *Router) Delete(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	r.addRoute(http.MethodDelete, path, handlerFunc, middlewares...)
 }
 
 // addRoute adds a new route to the router.
-func (r *Router) addRoute(method, path string, handlerFunc http.HandlerFunc, middlewares ...Middleware) {
+func (r *Router) addRoute(method, path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
 	route := Route{
 		Method:      method,
 		Path:        path,
 		HandlerFunc: handlerFunc,
 		Middlewares: middlewares,
 	}
+
+	fmt.Printf("Registered %s %s", method, path)
 
 	r.routes = append(r.routes, route)
 }
@@ -122,47 +128,77 @@ func (r *Router) RegisterRoutes(mux *http.ServeMux) {
 		for _, route := range group.Routes {
 			handler := route.HandlerFunc
 
-			handler = wrapWithMiddlewares(handler, r.globalMiddlewares...)
-			handler = wrapWithMiddlewares(handler, group.Middlewares...)
+			handler = wrapWithMiddlewares(handler, append(r.globalMiddlewares, group.Middlewares...)...)
 			handler = wrapWithMiddlewares(handler, route.Middlewares...)
 
-			mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), handler)
+			finalHandler := func(h HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, req *http.Request) {
+					ctx := &Context{
+						request:  req,
+						response: w,
+					}
+					if err := h(ctx); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+					}
+				}
+			}(handler)
+
+			mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), finalHandler)
 		}
 	}
 
 	for _, route := range r.routes {
 		handler := route.HandlerFunc
-		handler = wrapWithMiddlewares(handler, r.globalMiddlewares...)
-		handler = wrapWithMiddlewares(handler, route.Middlewares...)
-		mux.HandleFunc(route.Path, handler)
+		handler = wrapWithMiddlewares(handler, append(r.globalMiddlewares, route.Middlewares...)...)
+
+		finalHandler := func(h HandlerFunc) http.HandlerFunc {
+			return func(w http.ResponseWriter, req *http.Request) {
+				ctx := &Context{
+					request:  req,
+					response: w,
+				}
+				if err := h(ctx); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+			}
+		}(handler)
+
+		mux.HandleFunc(route.Path, finalHandler)
 	}
 }
 
-// wrapMiddleware wraps a single middleware function around the handler.
-func wrapWithMiddlewares(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var next http.HandlerFunc
-
-		next = handler
-
-		for i := len(middlewares) - 1; i >= 0; i-- {
-			middleware := middlewares[i]
-			next = func(handler http.HandlerFunc) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					if err := middleware(w, r, handler); err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-				}
-			}(next)
+// wrapWithMiddlewares wraps the handler with the provided middlewares.
+func wrapWithMiddlewares(handler HandlerFunc, middlewares ...Middleware) HandlerFunc {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		middleware := middlewares[i]
+		next := handler
+		handler = func(c *Context) error {
+			return middleware(c, next)
 		}
-
-		// Execute the composed middlewares and finally the handler
-		next(w, r)
-	})
+	}
+	return handler
 }
 
 // AddMiddleware adds a global middleware that applies to all routes.
 func (r *Router) AddMiddleware(mw Middleware) {
 	r.globalMiddlewares = append(r.globalMiddlewares, mw)
+}
+
+type Context struct {
+	request  *http.Request
+	response http.ResponseWriter
+}
+
+func (c *Context) Request() *http.Request {
+	return c.request
+}
+
+func (c *Context) Response() http.ResponseWriter {
+	return c.response
+}
+
+func (c *Context) JSON(status int, data any) error {
+	c.response.Header().Set("Content-Type", "application/json")
+	c.response.WriteHeader(status)
+	return json.NewEncoder(c.response).Encode(data)
 }

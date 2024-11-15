@@ -8,6 +8,7 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/service"
 )
 
 const asciiArt = `
@@ -33,12 +34,18 @@ func main() {
 
 	r := router.New()
 
-	_, err := db.Connect()
+	db, err := db.Connect()
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	authService := service.NewAuthService(db)
+
+	authHandler := handler.NewAuthHandler(authService)
+
+	RegisterHandlers(r, authHandler)
 
 	r.RegisterRoutes(server)
 
