@@ -2,14 +2,12 @@ package model
 
 // User represents the user entity
 type User struct {
-	ID          uint         `gorm:"primaryKey;autoIncrement" json:"id"`
-	FirstName   string       `gorm:"type:varchar(255);not null" json:"firstName"`
-	LastName    string       `gorm:"type:varchar(255);not null" json:"lastName"`
-	Phone       string       `gorm:"type:varchar(20)" json:"phone"`
+	BigId
 	Email       string       `gorm:"type:varchar(255);unique;not null" json:"email"`
 	Password    string       `gorm:"type:varchar(255);not null" json:"pasword"`
-	Role        string       `gorm:"type:enum('admin', 'coordinator', 'musician');not null" json:"role"`
+	Role        string       `gorm:"type:varchar(20);not null" json:"role"`
 	Instruments []Instrument `gorm:"many2many:user_instruments" json:"instruments"`
+	Profile     Profile      `gorm:"foreignKey:UserID" json:"profile"`
 	Timestamps
 }
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 )
@@ -32,11 +33,19 @@ func main() {
 
 	r := router.New()
 
+	_, err := db.Connect()
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	r.RegisterRoutes(server)
 
 	fmt.Println(asciiArt)
 	fmt.Println("Server is running on port", cnf.Port)
-	err := http.ListenAndServe(fmt.Sprintf(":%s", cnf.Port), server)
+
+	err = http.ListenAndServe(fmt.Sprintf(":%s", cnf.Port), server)
 
 	if err != nil {
 		fmt.Println(err)

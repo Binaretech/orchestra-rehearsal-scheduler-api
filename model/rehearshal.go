@@ -7,7 +7,7 @@ type Rehearsal struct {
 	RehearsalDate time.Time `gorm:"not null" json:"rehearsalDate"`
 	RehearsalTime time.Time `gorm:"not null" json:"rehearsalTime"`
 	Location      string    `gorm:"type:varchar(255);not null" json:"location"`
-	RehearsalType string    `gorm:"type:enum('general', 'regular');not null" json:"rehearsalType"`
+	IsGeneral     bool      `gorm:"not null;default:false" json:"isGeneral"`
 	ConcertID     uint      `gorm:"not null" json:"concertId"`
 	Concert       Concert   `gorm:"foreignKey:ConcertID" json:"concert"`
 	Users         []User    `gorm:"many2many:rehearsal_users" json:"users"`

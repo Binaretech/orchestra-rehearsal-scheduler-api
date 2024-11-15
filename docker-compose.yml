@@ -3,6 +3,10 @@ services:
         build: .
         ports:
             - ${PORT:-8080}:${PORT:-8080}
+        environment:
+            GOOSE_MIGRATION_DIR: /app/migrations
+            GOOSE_DRIVER: postgres
+            GOOSE_DBSTRING: "host=${DATABASE_HOST:-db} user=${DATABASE_USER:-postgres} dbname=${DATABASE_NAME:-scheduler} password=${DATABASE_PASS:-secret} sslmode=disable"
         volumes:
             - .:/app
     db:
