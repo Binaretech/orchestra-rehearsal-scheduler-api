@@ -49,9 +49,14 @@ func (h *AuthHandler) Login(ctx *router.Context) error {
 	return ctx.JSON(http.StatusOK, map[string]any{"accessToken": token, "user": user})
 }
 
+func (h *AuthHandler) Protected(ctx *router.Context) error {
+	return ctx.JSON(200, map[string]string{"message": "Protected"})
+}
+
 func (h *AuthHandler) Register(r *router.Router) {
 	r.Post("/login", h.Login)
 }
 
-func (h *AuthHandler) RegisterProtected(group *router.Group) {
+func (h *AuthHandler) RegisterProtected(r *router.Group) {
+	r.Get("/test", h.Protected)
 }

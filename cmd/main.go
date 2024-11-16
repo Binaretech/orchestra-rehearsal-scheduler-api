@@ -7,6 +7,7 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/middleware"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/service"
 )
@@ -60,7 +61,8 @@ func main() {
 }
 
 func RegisterHandlers(router *router.Router, handlers ...handler.Handler) {
-	protected := router.Group("/")
+	protected := router.Group("", middleware.Auth)
+
 	for _, h := range handlers {
 		h.Register(router)
 		h.RegisterProtected(protected)

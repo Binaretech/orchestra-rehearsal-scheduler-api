@@ -3,12 +3,13 @@ package utils
 import (
 	"fmt"
 
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var secretKey = []byte("my_secret_key")
-
 func GenerateToken(userID int64, role string) (string, error) {
+	var secretKey = config.GetConfig().TokenSecret
+
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"role":    role,
@@ -16,17 +17,19 @@ func GenerateToken(userID int64, role string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(secretKey)
+	return token.SignedString([]byte(secretKey))
 }
 
 // ValidateToken validates a JWT token.
 func ValidateToken(tokenString string) (*jwt.Token, error) {
+	var secretKey = config.GetConfig().TokenSecret
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return secretKey, nil
+		return []byte(secretKey), nil
 	})
 
 	return token, err

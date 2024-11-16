@@ -60,6 +60,8 @@ func (g *Group) addRoute(method, path string, handlerFunc HandlerFunc, middlewar
 		Middlewares: middlewares,
 	}
 
+	fmt.Printf("Registered %s %s%s\n", method, g.Prefix, path)
+
 	g.Routes = append(g.Routes, route)
 }
 
@@ -107,7 +109,7 @@ func (r *Router) addRoute(method, path string, handlerFunc HandlerFunc, middlewa
 		Middlewares: middlewares,
 	}
 
-	fmt.Printf("Registered %s %s", method, path)
+	fmt.Printf("Registered %s %s\n", method, path)
 
 	r.routes = append(r.routes, route)
 }
@@ -119,6 +121,7 @@ func (r *Router) Group(prefix string, middlewares ...Middleware) *Group {
 		Middlewares: middlewares,
 	}
 	r.groups = append(r.groups, group)
+
 	return group
 }
 
