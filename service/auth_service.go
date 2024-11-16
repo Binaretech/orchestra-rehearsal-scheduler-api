@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/cache"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/model"
 	"gorm.io/gorm"
 )
@@ -9,7 +10,7 @@ type AuthService struct {
 	db *gorm.DB
 }
 
-func NewAuthService(db *gorm.DB) *AuthService {
+func NewAuthService(db *gorm.DB, cache cache.Cache) *AuthService {
 	return &AuthService{db: db}
 }
 

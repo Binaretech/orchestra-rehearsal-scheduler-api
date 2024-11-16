@@ -2,7 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/cache"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/errors"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/service"
@@ -17,6 +19,7 @@ type LoginRequest struct {
 
 type AuthHandler struct {
 	authService *service.AuthService
+	cache       cache.Cache
 }
 
 func NewAuthHandler(authService *service.AuthService) *AuthHandler {
@@ -41,6 +44,8 @@ func (h *AuthHandler) Login(ctx *router.Context) error {
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Role)
+
+	h.cache.Set(strconv.FormatInt(user.ID, 10), token)
 
 	if err != nil {
 		return err

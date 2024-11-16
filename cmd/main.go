@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/cache"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
@@ -42,11 +43,14 @@ func main() {
 		return
 	}
 
-	authService := service.NewAuthService(db)
+	cache := cache.NewFileCache()
+	defer cache.Close()
+
+	authService := service.NewAuthService(db, cache)
 
 	authHandler := handler.NewAuthHandler(authService)
 
-	RegisterHandlers(r, authHandler)
+	RegisterHandlers(r, cache, authHandler)
 
 	r.RegisterRoutes(server)
 
@@ -60,8 +64,8 @@ func main() {
 	}
 }
 
-func RegisterHandlers(router *router.Router, handlers ...handler.Handler) {
-	protected := router.Group("", middleware.Auth)
+func RegisterHandlers(router *router.Router, cache cache.Cache, handlers ...handler.Handler) {
+	protected := router.Group("", middleware.Auth(cache))
 
 	for _, h := range handlers {
 		h.Register(router)
