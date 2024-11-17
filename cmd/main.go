@@ -46,9 +46,9 @@ func main() {
 	cache := cache.NewFileCache()
 	defer cache.Close()
 
-	authService := service.NewAuthService(db, cache)
+	authService := service.NewAuthService(db)
 
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, cache)
 
 	RegisterHandlers(r, cache, authHandler)
 

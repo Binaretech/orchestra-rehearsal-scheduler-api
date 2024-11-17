@@ -22,8 +22,8 @@ type AuthHandler struct {
 	cache       cache.Cache
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, cache cache.Cache) *AuthHandler {
+	return &AuthHandler{authService: authService, cache: cache}
 }
 
 func (h *AuthHandler) Login(ctx *router.Context) error {
@@ -45,11 +45,11 @@ func (h *AuthHandler) Login(ctx *router.Context) error {
 
 	token, err := utils.GenerateToken(user.ID, user.Role)
 
-	h.cache.Set(strconv.FormatInt(user.ID, 10), token)
-
 	if err != nil {
 		return err
 	}
+
+	h.cache.Set(strconv.FormatInt(user.ID, 10), token)
 
 	return ctx.JSON(http.StatusOK, map[string]any{"accessToken": token, "user": user})
 }
