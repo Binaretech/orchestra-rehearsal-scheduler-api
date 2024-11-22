@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/cache"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/errors"
@@ -49,7 +48,7 @@ func (h *AuthHandler) Login(ctx *router.Context) error {
 		return err
 	}
 
-	h.cache.Set(strconv.FormatInt(user.ID, 10), token)
+	h.cache.Set(token, "true")
 
 	return ctx.JSON(http.StatusOK, map[string]any{"accessToken": token, "user": user})
 }

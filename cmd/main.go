@@ -7,6 +7,7 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/cache"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/config"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/errors"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/handler"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/middleware"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
@@ -36,6 +37,8 @@ func main() {
 
 	r := router.New()
 
+	r.SetErrorHandler(errors.Handler)
+
 	db, err := db.Connect()
 
 	if err != nil {
@@ -47,10 +50,15 @@ func main() {
 	defer cache.Close()
 
 	authService := service.NewAuthService(db)
+	sectionService := service.NewSectionService(db)
 
 	authHandler := handler.NewAuthHandler(authService, cache)
+	sectionHandler := handler.NewSectionHandler(sectionService)
 
-	RegisterHandlers(r, cache, authHandler)
+	RegisterHandlers(r, cache,
+		authHandler,
+		sectionHandler,
+	)
 
 	r.RegisterRoutes(server)
 

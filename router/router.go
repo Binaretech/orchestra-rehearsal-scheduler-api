@@ -2,6 +2,7 @@
 // It allows defining routes with specific HTTP methods, URL paths, and handler functions.
 // Additionally, it supports middleware for both individual routes and groups of routes
 // with common prefixes.
+// Package router provides a simple and flexible routing mechanism for HTTP servers.
 package router
 
 import (
@@ -16,6 +17,9 @@ type Middleware func(*Context, HandlerFunc) error
 // HandlerFunc defines the type for handler functions that use Context.
 type HandlerFunc func(*Context) error
 
+// ErrorHandler defines the type for centralized error handling.
+type ErrorHandler func(*Context, error)
+
 // Route represents a single route.
 type Route struct {
 	Method      string       // HTTP method (GET, POST, PUT, DELETE, etc.)
@@ -29,6 +33,34 @@ type Group struct {
 	Prefix      string       // Common prefix for all routes in the group
 	Middlewares []Middleware // Specific middlewares for all routes in this group
 	Routes      []Route      // Specific routes of the group
+}
+
+// Router is an abstraction over the default ServeMux.
+type Router struct {
+	routes            []Route      // Registered routes
+	globalMiddlewares []Middleware // Global middlewares applied to all routes
+	groups            []*Group     // Route groups with prefixes
+	errorHandler      ErrorHandler // Custom error handler
+}
+
+// Get allows registering a GET route.
+func (r *Router) Get(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
+	r.addRoute(http.MethodGet, path, handlerFunc, middlewares...)
+}
+
+// Post allows registering a POST route.
+func (r *Router) Post(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
+	r.addRoute(http.MethodPost, path, handlerFunc, middlewares...)
+}
+
+// Put allows registering a PUT route.
+func (r *Router) Put(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
+	r.addRoute(http.MethodPut, path, handlerFunc, middlewares...)
+}
+
+// Delete allows registering a DELETE route.
+func (r *Router) Delete(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
+	r.addRoute(http.MethodDelete, path, handlerFunc, middlewares...)
 }
 
 // Get allows registering a GET route on the group.
@@ -61,43 +93,34 @@ func (g *Group) addRoute(method, path string, handlerFunc HandlerFunc, middlewar
 	}
 
 	fmt.Printf("Registered %s %s%s\n", method, g.Prefix, path)
-
 	g.Routes = append(g.Routes, route)
 }
 
-// Router is an abstraction over the default ServeMux.
-type Router struct {
-	routes            []Route      // Registered routes
-	globalMiddlewares []Middleware // Global middlewares applied to all routes
-	groups            []*Group     // Route groups with prefixes
+// Context holds the request and response objects for a route.
+type Context struct {
+	request  *http.Request
+	response http.ResponseWriter
 }
 
 // New creates a new instance of Router.
 func New() *Router {
 	return &Router{
-		globalMiddlewares: []Middleware{}, // Initialize without global middlewares
-		groups:            []*Group{},     // Initialize without route groups
+		globalMiddlewares: []Middleware{},
+		groups:            []*Group{},
+		errorHandler: func(c *Context, err error) {
+			http.Error(c.Response(), err.Error(), http.StatusInternalServerError)
+		},
 	}
 }
 
-// Get allows registering a GET route.
-func (r *Router) Get(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
-	r.addRoute(http.MethodGet, path, handlerFunc, middlewares...)
+// AddMiddleware adds a global middleware that applies to all routes.
+func (r *Router) AddMiddleware(mw Middleware) {
+	r.globalMiddlewares = append(r.globalMiddlewares, mw)
 }
 
-// Post allows registering a POST route.
-func (r *Router) Post(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
-	r.addRoute(http.MethodPost, path, handlerFunc, middlewares...)
-}
-
-// Put allows registering a PUT route.
-func (r *Router) Put(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
-	r.addRoute(http.MethodPut, path, handlerFunc, middlewares...)
-}
-
-// Delete allows registering a DELETE route.
-func (r *Router) Delete(path string, handlerFunc HandlerFunc, middlewares ...Middleware) {
-	r.addRoute(http.MethodDelete, path, handlerFunc, middlewares...)
+// SetErrorHandler allows configuring a custom error handler.
+func (r *Router) SetErrorHandler(handler ErrorHandler) {
+	r.errorHandler = handler
 }
 
 // addRoute adds a new route to the router.
@@ -110,18 +133,16 @@ func (r *Router) addRoute(method, path string, handlerFunc HandlerFunc, middlewa
 	}
 
 	fmt.Printf("Registered %s %s\n", method, path)
-
 	r.routes = append(r.routes, route)
 }
 
-// Group allows creating a group of routes with a common prefix and specific middlewares.
+// Group creates a new group of routes with a common prefix and specific middlewares.
 func (r *Router) Group(prefix string, middlewares ...Middleware) *Group {
 	group := &Group{
 		Prefix:      prefix,
 		Middlewares: middlewares,
 	}
 	r.groups = append(r.groups, group)
-
 	return group
 }
 
@@ -129,44 +150,36 @@ func (r *Router) Group(prefix string, middlewares ...Middleware) *Group {
 func (r *Router) RegisterRoutes(mux *http.ServeMux) {
 	for _, group := range r.groups {
 		for _, route := range group.Routes {
-			handler := route.HandlerFunc
-
-			handler = wrapWithMiddlewares(handler, append(r.globalMiddlewares, group.Middlewares...)...)
-			handler = wrapWithMiddlewares(handler, route.Middlewares...)
-
-			finalHandler := func(h HandlerFunc) http.HandlerFunc {
-				return func(w http.ResponseWriter, req *http.Request) {
-					ctx := &Context{
-						request:  req,
-						response: w,
-					}
-					if err := h(ctx); err != nil {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-					}
-				}
-			}(handler)
-
-			mux.HandleFunc(fmt.Sprintf("%s%s", group.Prefix, route.Path), finalHandler)
+			finalHandler := r.createHandler(route.HandlerFunc, append(r.globalMiddlewares, group.Middlewares...)...)
+			mux.HandleFunc(group.Prefix+route.Path, finalHandler)
 		}
 	}
 
 	for _, route := range r.routes {
-		handler := route.HandlerFunc
-		handler = wrapWithMiddlewares(handler, append(r.globalMiddlewares, route.Middlewares...)...)
-
-		finalHandler := func(h HandlerFunc) http.HandlerFunc {
-			return func(w http.ResponseWriter, req *http.Request) {
-				ctx := &Context{
-					request:  req,
-					response: w,
-				}
-				if err := h(ctx); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-				}
-			}
-		}(handler)
-
+		finalHandler := r.createHandler(route.HandlerFunc, append(r.globalMiddlewares, route.Middlewares...)...)
 		mux.HandleFunc(route.Path, finalHandler)
+	}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": "error/not-found"})
+
+	})
+}
+
+// createHandler wraps a HandlerFunc with middlewares and the error handler.
+func (r *Router) createHandler(handler HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+	handler = wrapWithMiddlewares(handler, middlewares...)
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx := &Context{
+			request:  req,
+			response: w,
+		}
+
+		if err := handler(ctx); err != nil {
+			r.errorHandler(ctx, err)
+		}
 	}
 }
 
@@ -182,14 +195,12 @@ func wrapWithMiddlewares(handler HandlerFunc, middlewares ...Middleware) Handler
 	return handler
 }
 
-// AddMiddleware adds a global middleware that applies to all routes.
-func (r *Router) AddMiddleware(mw Middleware) {
-	r.globalMiddlewares = append(r.globalMiddlewares, mw)
+func (c *Context) Param(key string) string {
+	return c.request.PathValue(key)
 }
 
-type Context struct {
-	request  *http.Request
-	response http.ResponseWriter
+func (c *Context) Query(key string) string {
+	return c.request.URL.Query().Get(key)
 }
 
 func (c *Context) Request() *http.Request {
@@ -200,14 +211,22 @@ func (c *Context) Response() http.ResponseWriter {
 	return c.response
 }
 
+func (c *Context) Error(status int, message string) error {
+	return c.JSON(status, map[string]string{
+		"error": message,
+	})
+}
+
 func (c *Context) JSON(status int, data any) error {
 	c.response.Header().Set("Content-Type", "application/json")
 	c.response.WriteHeader(status)
 	return json.NewEncoder(c.response).Encode(data)
 }
+
 func (c *Context) Parse(data any) error {
 	if c.request.ContentLength == 0 {
 		return nil
 	}
+
 	return json.NewDecoder(c.request.Body).Decode(data)
 }

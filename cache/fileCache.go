@@ -11,7 +11,7 @@ type FileCache struct {
 }
 
 func NewFileCache() *FileCache {
-	db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
+	db, err := badger.Open(badger.DefaultOptions("./tmp/cache"))
 	if err != nil {
 		log.Fatal(err)
 	}
