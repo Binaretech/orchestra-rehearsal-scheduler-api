@@ -51,13 +51,16 @@ func main() {
 
 	authService := service.NewAuthService(db)
 	sectionService := service.NewSectionService(db)
+	instrumentService := service.NewInstrumentService(db)
 
 	authHandler := handler.NewAuthHandler(authService, cache)
 	sectionHandler := handler.NewSectionHandler(sectionService)
+	instrumentHander := handler.NewInstrumentHandler(instrumentService)
 
 	RegisterHandlers(r, cache,
 		authHandler,
 		sectionHandler,
+		instrumentHander,
 	)
 
 	r.RegisterRoutes(server)
