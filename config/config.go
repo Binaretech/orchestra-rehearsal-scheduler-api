@@ -46,7 +46,7 @@ func LoadConfig(configPath string) *Config {
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
 		case *fs.PathError:
-			viper.SetDefault("DATABASE_HOST", "localhost")
+			viper.SetDefault("DATABASE_HOST", "db")
 			viper.SetDefault("DATABASE_PORT", "5432")
 			viper.SetDefault("DATABASE_USER", "postgres")
 			viper.SetDefault("DATABASE_PASS", "")
@@ -86,5 +86,10 @@ func GetConfig() *Config {
 	if AppConfig == nil {
 		log.Fatal("Configuration not loaded. Call LoadConfig first.")
 	}
+	return AppConfig
+}
+
+func SetVariable(key string, value string) *Config {
+	viper.Set(key, value)
 	return AppConfig
 }
