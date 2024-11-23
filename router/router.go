@@ -92,7 +92,6 @@ func (g *Group) addRoute(method, path string, handlerFunc HandlerFunc, middlewar
 		Middlewares: middlewares,
 	}
 
-	fmt.Printf("Registered %s %s%s\n", method, g.Prefix, path)
 	g.Routes = append(g.Routes, route)
 }
 
@@ -132,7 +131,6 @@ func (r *Router) addRoute(method, path string, handlerFunc HandlerFunc, middlewa
 		Middlewares: middlewares,
 	}
 
-	fmt.Printf("Registered %s %s\n", method, path)
 	r.routes = append(r.routes, route)
 }
 
@@ -151,13 +149,16 @@ func (r *Router) RegisterRoutes(mux *http.ServeMux) {
 	for _, group := range r.groups {
 		for _, route := range group.Routes {
 			finalHandler := r.createHandler(route.HandlerFunc, append(r.globalMiddlewares, group.Middlewares...)...)
-			mux.HandleFunc(group.Prefix+route.Path, finalHandler)
+			fmt.Printf("Registered %s %s%s\n", route.Method, group.Prefix, route.Path)
+
+			mux.HandleFunc(fmt.Sprintf("%s %s%s", route.Method, group.Prefix, route.Path), finalHandler)
 		}
 	}
 
 	for _, route := range r.routes {
 		finalHandler := r.createHandler(route.HandlerFunc, append(r.globalMiddlewares, route.Middlewares...)...)
-		mux.HandleFunc(route.Path, finalHandler)
+		fmt.Printf("Registered %s %s\n", route.Method, route.Path)
+		mux.HandleFunc(fmt.Sprintf("%s %s", route.Method, route.Path), finalHandler)
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

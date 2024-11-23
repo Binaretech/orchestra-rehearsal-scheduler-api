@@ -4,7 +4,7 @@ package model
 type Instrument struct {
 	BigId
 	Name      string  `gorm:"type:varchar(255);not null" json:"name"`
-	SectionID uint    `gorm:"not null" json:"sectionId"`
+	SectionID int64   `gorm:"not null" json:"sectionId"`
 	Section   Section `gorm:"foreignKey:SectionID" json:"section"`
 	Users     []User  `gorm:"many2many:user_instruments" json:"users"`
 	Timestamps
