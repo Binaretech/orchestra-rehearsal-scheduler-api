@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/model"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type InstrumentService struct {
@@ -14,18 +13,14 @@ func NewInstrumentService(db *gorm.DB) *InstrumentService {
 	return &InstrumentService{db: db}
 }
 
-func (s *InstrumentService) Create(name string, sectionId int64) (*model.Instrument, error) {
-	section := model.Instrument{
-		Name:      name,
-		SectionID: sectionId,
+func (s *InstrumentService) Create(name string) (*model.Instrument, error) {
+	instrument := model.Instrument{
+		Name: name,
 	}
 
-	if err := s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "name"}, {Name: "section_id"}},
-		DoNothing: true,
-	}).Create(&section).Error; err != nil {
+	if err := s.db.Create(&instrument).Error; err != nil {
 		return nil, err
 	}
 
-	return &section, nil
+	return &instrument, nil
 }

@@ -8,16 +8,16 @@ import (
 )
 
 type CreateInstrumentRequest struct {
-	Name      string `json:"name"`
-	SectionID int64  `json:"sectionId"`
+	Name string `json:"name"`
 }
 
 type InstrumentHandler struct {
 	instrumentService *service.InstrumentService
+	sectionService    *service.SectionService
 }
 
-func NewInstrumentHandler(instrumentService *service.InstrumentService) *InstrumentHandler {
-	return &InstrumentHandler{instrumentService: instrumentService}
+func NewInstrumentHandler(instrumentService *service.InstrumentService, sectionService *service.SectionService) *InstrumentHandler {
+	return &InstrumentHandler{instrumentService: instrumentService, sectionService: sectionService}
 }
 
 func (h *InstrumentHandler) Create(ctx *router.Context) error {
@@ -27,7 +27,7 @@ func (h *InstrumentHandler) Create(ctx *router.Context) error {
 		return err
 	}
 
-	instrument, err := h.instrumentService.Create(body.Name, body.SectionID)
+	instrument, err := h.instrumentService.Create(body.Name)
 
 	if err != nil {
 		return err

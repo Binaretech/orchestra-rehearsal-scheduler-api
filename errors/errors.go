@@ -7,5 +7,7 @@ const (
 	CONFLICT            = "error/conflict"
 	NOT_FOUND           = "error/not-found"
 
+	SECTION_NOT_FOUND = "section/not-found"
+
 	INTERNAL_ERROR = "internal/error"
 )

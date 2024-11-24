@@ -1,5 +1,11 @@
 package model
 
+const (
+	USER_ADMIN_ROLE       = "admin"
+	USER_COORDINATOR_ROLE = "coordinator"
+	USER_MUSICIAN_ROLE    = "musician"
+)
+
 // User represents the user entity
 type User struct {
 	BigId

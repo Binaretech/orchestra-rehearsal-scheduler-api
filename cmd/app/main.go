@@ -55,7 +55,7 @@ func main() {
 
 	authHandler := handler.NewAuthHandler(authService, cache)
 	sectionHandler := handler.NewSectionHandler(sectionService)
-	instrumentHander := handler.NewInstrumentHandler(instrumentService)
+	instrumentHander := handler.NewInstrumentHandler(instrumentService, sectionService)
 
 	RegisterHandlers(r, cache,
 		authHandler,
