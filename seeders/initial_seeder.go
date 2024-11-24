@@ -11,12 +11,15 @@ func InitialSeeder() error {
 	query, err := db.Connect()
 	tx := query.Begin()
 
+	// Create family
+	family := model.Family{Name: "family " + faker.Word()}
+	err = tx.Create(&family).Error
+
 	// Create a new section
-	section := model.Section{Name: "section " + faker.Word()}
+	section := model.Section{Name: "section " + faker.Word(), FamilyID: uint(family.ID)}
 	err = tx.Create(&section).Error
 
-	// Create instrument
-	instrument := model.Instrument{Name: "instrument " + faker.Word(), SectionID: uint(section.ID)}
+	instrument := model.Instrument{Name: "instrument " + faker.Word(), SectionID: section.ID}
 	err = tx.Create(&instrument).Error
 
 	// Create concert
