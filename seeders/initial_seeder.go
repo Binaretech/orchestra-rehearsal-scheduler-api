@@ -4,6 +4,7 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/db"
 	model "github.com/Binaretech/orchestra-rehearsal-scheduler-api/model"
 	faker "github.com/brianvoe/gofakeit/v7"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // InitialSeeder seeds the database with initial data
@@ -174,12 +175,14 @@ func InitialSeeder() error {
 	rehearsal := model.Rehearsal{RehearsalDate: faker.FutureDate(), RehearsalTime: faker.FutureDate(), Location: faker.Address().Address, IsGeneral: true, ConcertID: uint(concert.ID)}
 	err = tx.Create(&rehearsal).Error
 
+	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
+
 	// Create users
 	var users []model.User
 	for i := 0; i < 10; i++ {
 		user := model.User{
 			Email:    faker.Email(),
-			Password: faker.Password(true, true, true, true, false, 10),
+			Password: string(password),
 			Role:     model.USER_ADMIN_ROLE,
 			Profile: model.Profile{
 				FirstName: faker.Name(),
