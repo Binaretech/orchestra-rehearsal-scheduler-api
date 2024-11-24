@@ -166,18 +166,6 @@ func InitialSeeder() error {
 
 	tx.Create(families)
 
-	// // Create family
-	// family := model.Family{Name: "family " + faker.Word()}
-	// err = tx.Create(&family).Error
-
-	// // Create a new section
-	// section := model.Section{Name: "section " + faker.Word(), FamilyID: uint(family.ID)}
-	// err = tx.Create(&section).Error
-
-	// instrument := model.Instrument{Name: "instrument " + faker.Word(), Sections: []model.Section{{}}}
-
-	// err = tx.Create(&instrument).Error
-
 	// Create concert
 	concert := model.Concert{Title: "concert " + faker.LoremIpsumSentence(6), Location: faker.City(), ConcertDate: faker.Date(), Description: faker.LoremIpsumSentence(12), ConcertDateStatus: "definitive"}
 	err = tx.Create(&concert).Error
