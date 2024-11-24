@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/brianvoe/gofakeit/v7 v7.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

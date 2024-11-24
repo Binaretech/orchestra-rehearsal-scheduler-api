@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Connect connects to the database
 func Connect() (*gorm.DB, error) {
 	cnf := config.GetConfig()
 
