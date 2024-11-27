@@ -10,7 +10,8 @@ import (
 )
 
 type CreateSection struct {
-	Name string `json:"name"`
+	Name         string `json:"name"`
+	InstrumentID int64  `json:"instrumentId"`
 }
 
 type SectionHandler struct {
@@ -53,7 +54,7 @@ func (h *SectionHandler) Create(ctx *router.Context) error {
 		return ctx.Error(http.StatusConflict, errors.CONFLICT)
 	}
 
-	section := h.sectionService.Create(body.Name)
+	section := h.sectionService.Create(body.Name, body.InstrumentID)
 
 	if section == nil {
 		return ctx.Error(http.StatusInternalServerError, errors.INTERNAL_ERROR)

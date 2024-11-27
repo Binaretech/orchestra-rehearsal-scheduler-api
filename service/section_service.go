@@ -49,8 +49,8 @@ func (s *SectionService) GetByName(name string) *model.Section {
 	return section
 }
 
-func (s *SectionService) Create(name string) *model.Section {
-	section := &model.Section{Name: name}
+func (s *SectionService) Create(name string, intrumentId int64) *model.Section {
+	section := &model.Section{Name: name, InstrumentID: intrumentId}
 
 	s.db.Create(section)
 

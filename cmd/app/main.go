@@ -52,13 +52,16 @@ func main() {
 	authService := service.NewAuthService(db)
 	sectionService := service.NewSectionService(db)
 	instrumentService := service.NewInstrumentService(db)
+	familyService := service.NewFamilyService(db)
 
 	authHandler := handler.NewAuthHandler(authService, cache)
 	sectionHandler := handler.NewSectionHandler(sectionService)
 	instrumentHander := handler.NewInstrumentHandler(instrumentService, sectionService)
+	familyHandler := handler.NewFamilyHandler(familyService)
 
 	RegisterHandlers(r, cache,
 		authHandler,
+		familyHandler,
 		sectionHandler,
 		instrumentHander,
 	)

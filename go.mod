@@ -3,6 +3,7 @@ module github.com/Binaretech/orchestra-rehearsal-scheduler-api
 go 1.23.1
 
 require (
+	github.com/brianvoe/gofakeit/v7 v7.1.2
 	github.com/dgraph-io/badger/v4 v4.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -13,7 +14,6 @@ require (
 )
 
 require (
-	github.com/brianvoe/gofakeit/v7 v7.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
