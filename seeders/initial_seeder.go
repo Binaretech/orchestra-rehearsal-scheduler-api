@@ -10,6 +10,10 @@ import (
 // InitialSeeder seeds the database with initial data
 func InitialSeeder() error {
 	query, err := db.Connect()
+	if err != nil {
+		return err
+	}
+
 	tx := query.Begin()
 
 	violin := model.Instrument{Name: "Violin"}
@@ -45,8 +49,11 @@ func InitialSeeder() error {
 	}
 
 	for _, instrument := range instruments {
-		tx.Create(instrument)
-
+		err = tx.Create(instrument).Error
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	families := []model.Family{
@@ -171,9 +178,19 @@ func InitialSeeder() error {
 	concert := model.Concert{Title: "concert " + faker.LoremIpsumSentence(6), Location: faker.City(), ConcertDate: faker.Date(), Description: faker.LoremIpsumSentence(12), ConcertDateStatus: "definitive"}
 	err = tx.Create(&concert).Error
 
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	// Create rehearsal
 	rehearsal := model.Rehearsal{RehearsalDate: faker.FutureDate(), RehearsalTime: faker.FutureDate(), Location: faker.Address().Address, IsGeneral: true, ConcertID: uint(concert.ID)}
 	err = tx.Create(&rehearsal).Error
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	password, _ := bcrypt.GenerateFromPassword([]byte("secret"), bcrypt.DefaultCost)
 
@@ -189,9 +206,25 @@ func InitialSeeder() error {
 				LastName:  faker.LastName(),
 			},
 		}
-		// tx.Model(&user).Association("Instruments").Append(instrument)
 
 		users = append(users, user)
+	}
+
+	for _, instrument := range instruments {
+		for i := 0; i < 4; i++ {
+			user := model.User{
+				Email:    faker.Email(),
+				Password: string(password),
+				Role:     model.USER_MUSICIAN_ROLE,
+				Profile: model.Profile{
+					FirstName: faker.Name(),
+					LastName:  faker.LastName(),
+				},
+				Instruments: []model.Instrument{*instrument},
+			}
+
+			users = append(users, user)
+		}
 	}
 
 	err = tx.Create(&users).Error

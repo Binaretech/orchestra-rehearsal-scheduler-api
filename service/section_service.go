@@ -49,6 +49,46 @@ func (s *SectionService) GetByName(name string) *model.Section {
 	return section
 }
 
+type GetSectionMusiciansParams struct {
+	Page    int
+	Limit   int
+	Search  string
+	Exclude []uint
+}
+
+func (s *SectionService) GetSectionMusicians(id int64, params *GetSectionMusiciansParams) []*model.User {
+	musicians := []*model.User{}
+
+	page := 1
+	limit := 20
+
+	if params.Page > 0 {
+		page = params.Page
+	}
+
+	if params.Limit > 0 {
+		limit = params.Limit
+	}
+
+	query := s.db.Table("users").
+		Joins("Profile").
+		Joins("JOIN user_instruments ON user_instruments.user_id = users.id").
+		Joins("JOIN sections ON sections.instrument_id = user_instruments.instrument_id").
+		Where("sections.id = ?", id)
+
+	if params.Search != "" {
+		query = query.Where("users.email LIKE ? OR users.first_name LIKE ? OR users.last_name LIKE ?", "%"+params.Search+"%", "%"+params.Search+"%", "%"+params.Search+"%")
+	}
+
+	if len(params.Exclude) > 0 {
+		query = query.Where("users.id NOT IN (?)", params.Exclude)
+	}
+
+	query.Offset((page - 1) * limit).Limit(limit).Find(&musicians)
+
+	return musicians
+}
+
 func (s *SectionService) Create(name string, intrumentId int64) *model.Section {
 	section := &model.Section{Name: name, InstrumentID: intrumentId}
 

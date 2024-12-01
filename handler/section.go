@@ -28,6 +28,21 @@ func (h *SectionHandler) Get(ctx *router.Context) error {
 	return ctx.JSON(http.StatusOK, sections)
 }
 
+func (h *SectionHandler) GetMusicians(ctx *router.Context) error {
+	id, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	limit, _ := strconv.Atoi(ctx.Query("limit"))
+	search := ctx.Query("search")
+
+	sections := h.sectionService.GetSectionMusicians(id, &service.GetSectionMusiciansParams{
+		Page:   page,
+		Limit:  limit,
+		Search: search,
+	})
+
+	return ctx.JSON(http.StatusOK, sections)
+}
+
 func (h *SectionHandler) GetById(ctx *router.Context) error {
 	id := ctx.Param("id")
 
@@ -64,20 +79,11 @@ func (h *SectionHandler) Create(ctx *router.Context) error {
 
 }
 
-func (h *SectionHandler) Update(ctx *router.Context) error {
-	return nil
-}
-
-func (h *SectionHandler) Delete(ctx *router.Context) error {
-	return nil
-}
-
 func (h *SectionHandler) Register(r *router.Router) {}
 
 func (h *SectionHandler) RegisterProtected(r *router.Group) {
 	r.Get("/sections", h.Get)
+	r.Get("/sections/{id}/musicians", h.GetMusicians)
 	r.Get("/sections/{id}", h.GetById)
 	r.Post("/sections", h.Create)
-	r.Put("/sections", h.Update)
-	r.Delete("/sections", h.Delete)
 }
