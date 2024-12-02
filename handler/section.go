@@ -3,8 +3,10 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/errors"
+	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/model"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/service"
 )
@@ -34,13 +36,26 @@ func (h *SectionHandler) GetMusicians(ctx *router.Context) error {
 	limit, _ := strconv.Atoi(ctx.Query("limit"))
 	search := ctx.Query("search")
 
-	sections := h.sectionService.GetSectionMusicians(id, &service.GetSectionMusiciansParams{
-		Page:   page,
-		Limit:  limit,
-		Search: search,
+	queryExclude := ctx.Query("exclude")
+	excludeIDs := []int64{}
+
+	if queryExclude != "" {
+		for _, idStr := range strings.Split(queryExclude, ",") {
+			id, err := strconv.ParseInt(idStr, 10, 64)
+			if err == nil {
+				excludeIDs = append(excludeIDs, id)
+			}
+		}
+	}
+
+	musicians, count := h.sectionService.GetSectionMusicians(id, &service.GetSectionMusiciansParams{
+		Page:    page,
+		Limit:   limit,
+		Search:  search,
+		Exclude: excludeIDs,
 	})
 
-	return ctx.JSON(http.StatusOK, sections)
+	return ctx.JSON(http.StatusOK, Resource[model.User]{Data: musicians, Total: count})
 }
 
 func (h *SectionHandler) GetById(ctx *router.Context) error {

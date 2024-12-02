@@ -53,11 +53,12 @@ type GetSectionMusiciansParams struct {
 	Page    int
 	Limit   int
 	Search  string
-	Exclude []uint
+	Exclude []int64
 }
 
-func (s *SectionService) GetSectionMusicians(id int64, params *GetSectionMusiciansParams) []*model.User {
-	musicians := []*model.User{}
+func (s *SectionService) GetSectionMusicians(id int64, params *GetSectionMusiciansParams) ([]model.User, int64) {
+	musicians := []model.User{}
+	var totalCount int64
 
 	page := 1
 	limit := 20
@@ -84,9 +85,9 @@ func (s *SectionService) GetSectionMusicians(id int64, params *GetSectionMusicia
 		query = query.Where("users.id NOT IN (?)", params.Exclude)
 	}
 
-	query.Offset((page - 1) * limit).Limit(limit).Find(&musicians)
+	query.Offset((page - 1) * limit).Limit(limit).Find(&musicians).Count(&totalCount)
 
-	return musicians
+	return musicians, totalCount
 }
 
 func (s *SectionService) Create(name string, intrumentId int64) *model.Section {

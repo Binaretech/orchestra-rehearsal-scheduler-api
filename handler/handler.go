@@ -7,6 +7,11 @@ import (
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 )
 
+type Resource[T any] struct {
+	Data  []T   `json:"data"`
+	Total int64 `json:"total"`
+}
+
 type Handler interface {
 	Register(r *router.Router)
 	RegisterProtected(group *router.Group)
