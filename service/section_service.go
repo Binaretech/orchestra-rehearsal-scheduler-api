@@ -90,7 +90,7 @@ func (s *SectionService) GetSectionMusicians(id int64, params *GetSectionMusicia
 	return musicians, totalCount
 }
 
-func (s *SectionService) Create(name string, intrumentId int64) *model.Section {
+func (s *SectionService) Create(name string, intrumentId uint) *model.Section {
 	section := &model.Section{Name: name, InstrumentID: intrumentId}
 
 	s.db.Create(section)

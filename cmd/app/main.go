@@ -53,17 +53,20 @@ func main() {
 	sectionService := service.NewSectionService(db)
 	instrumentService := service.NewInstrumentService(db)
 	familyService := service.NewFamilyService(db)
+	concertService := service.NewConcertService(db)
 
 	authHandler := handler.NewAuthHandler(authService, cache)
 	sectionHandler := handler.NewSectionHandler(sectionService)
 	instrumentHander := handler.NewInstrumentHandler(instrumentService, sectionService)
 	familyHandler := handler.NewFamilyHandler(familyService)
+	concertHandler := handler.NewConcertHandler(concertService)
 
 	RegisterHandlers(r, cache,
 		authHandler,
 		familyHandler,
 		sectionHandler,
 		instrumentHander,
+		concertHandler,
 	)
 
 	r.RegisterRoutes(server)

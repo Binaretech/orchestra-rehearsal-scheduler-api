@@ -8,5 +8,5 @@ type Timestamps struct {
 }
 
 type BigId struct {
-	ID int64 `gorm:"primaryKey;autoIncrement;type:bigint" json:"id"`
+	ID uint `gorm:"primaryKey;autoIncrement;type:bigint" json:"id"`
 }

@@ -6,6 +6,6 @@ type Section struct {
 	Name         string      `gorm:"type:varchar(255);not null" json:"name"`
 	FamilyID     uint        `json:"familyId"`
 	Family       *Family     `gorm:"foreignKey:FamilyID" json:"family"`
-	InstrumentID int64       `json:"instrumentId"`
+	InstrumentID uint        `json:"instrumentId"`
 	Instrument   *Instrument `gorm:"foreignKey:InstrumentID" json:"instrument"`
 }

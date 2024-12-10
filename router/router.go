@@ -225,6 +225,7 @@ func (c *Context) JSON(status int, data any) error {
 }
 
 func (c *Context) Parse(data any) error {
+
 	if c.request.ContentLength == 0 {
 		return nil
 	}

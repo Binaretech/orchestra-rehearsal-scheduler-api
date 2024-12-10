@@ -13,7 +13,7 @@ import (
 
 type CreateSection struct {
 	Name         string `json:"name"`
-	InstrumentID int64  `json:"instrumentId"`
+	InstrumentID uint   `json:"instrumentId"`
 }
 
 type SectionHandler struct {
