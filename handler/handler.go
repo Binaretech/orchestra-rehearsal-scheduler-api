@@ -8,6 +8,13 @@ import (
 )
 
 type Resource[T any] struct {
+	Data T `json:"data"`
+}
+
+func NewResource[T any](data T) Resource[T] {
+	return Resource[T]{Data: data}
+}
+type Collection[T any] struct {
 	Data  []T   `json:"data"`
 	Total int64 `json:"total"`
 }

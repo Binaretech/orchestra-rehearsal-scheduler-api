@@ -9,16 +9,16 @@ type Concert struct {
 	Location          string           `gorm:"type:varchar(255);not null" json:"location"`
 	Description       string           `gorm:"type:varchar(255)" json:"description"`
 	Rehearsals        []Rehearsal      `gorm:"foreignKey:ConcertID" json:"rehearsals"`
-	ConcertSections   []ConcertSection `gorm:"foreignKey:ConcertID" json:"sections"`
+	Sections          []ConcertSection `gorm:"foreignKey:ConcertID" json:"sections"`
 	Timestamps
 }
 
 type ConcertSection struct {
 	BigId
-	ConcertID uint    `json:"concertId"`
-	SectionID uint    `json:"sectionId"`
-	Section   Section `gorm:"foreignKey:SectionID" json:"section"`
-	Stands    []Stand `gorm:"foreignKey:ConcertSectionID" json:"stands"`
+	ConcertID uint     `json:"concertId"`
+	SectionID uint     `json:"sectionId"`
+	Section   *Section `gorm:"foreignKey:SectionID" json:"section,omitempty"`
+	Stands    []Stand  `gorm:"foreignKey:ConcertSectionID" json:"stands"`
 	Timestamps
 }
 

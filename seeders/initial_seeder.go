@@ -175,7 +175,7 @@ func InitialSeeder() error {
 	tx.Create(families)
 
 	// Create concert
-	concert := model.Concert{Title: "concert " + faker.LoremIpsumSentence(6), Location: faker.City(), ConcertDate: faker.Date(), Description: faker.LoremIpsumSentence(12), ConcertDateStatus: "definitive"}
+	concert := model.Concert{Title: "concert " + faker.LoremIpsumSentence(6), Location: faker.City(), ConcertDate: faker.Date().String(), Description: faker.LoremIpsumSentence(12), ConcertDateStatus: "definitive"}
 	err = tx.Create(&concert).Error
 
 	if err != nil {
@@ -184,7 +184,7 @@ func InitialSeeder() error {
 	}
 
 	// Create rehearsal
-	rehearsal := model.Rehearsal{RehearsalDate: faker.FutureDate(), RehearsalTime: faker.FutureDate(), Location: faker.Address().Address, IsGeneral: true, ConcertID: uint(concert.ID)}
+	rehearsal := model.Rehearsal{Date: faker.FutureDate().String(), Location: faker.Address().Address, IsGeneral: true, ConcertID: uint(concert.ID)}
 	err = tx.Create(&rehearsal).Error
 
 	if err != nil {

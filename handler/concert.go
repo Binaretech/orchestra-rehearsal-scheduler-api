@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/router"
 	"github.com/Binaretech/orchestra-rehearsal-scheduler-api/service"
@@ -14,7 +15,7 @@ type CreateConcertRequest struct {
 	Distribution  []service.ConcertDistribution `validate:"required,dive"`
 	Title         string                        `json:"title" validate:"required"`
 	Location      string                        `json:"location" validate:"required"`
-	Date          string                        `json:"date" validate:"required,datetime=2006-01-02"`
+	Date          string                        `json:"date"`
 	IsDefinitive  bool                          `json:"isDefinitive"`
 }
 
@@ -24,6 +25,24 @@ type ConcertHandler struct {
 
 func NewConcertHandler(concertService *service.ConcertService) *ConcertHandler {
 	return &ConcertHandler{concertService: concertService}
+}
+
+func (h *ConcertHandler) Find(ctx *router.Context) error {
+	idParam := ctx.Param("id")
+
+	id, err := strconv.ParseUint(idParam, 10, 32)
+
+	if err != nil {
+		return err
+	}
+
+	concert, err := h.concertService.Find(uint(id))
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, NewResource(concert))
 }
 
 func (h *ConcertHandler) Create(ctx *router.Context) error {
@@ -43,11 +62,12 @@ func (h *ConcertHandler) Create(ctx *router.Context) error {
 		return err
 	}
 
-	return ctx.JSON(http.StatusCreated, concert)
+	return ctx.JSON(http.StatusCreated, NewResource(concert))
 }
 
 func (h *ConcertHandler) Register(r *router.Router) {}
 
 func (h *ConcertHandler) RegisterProtected(r *router.Group) {
+	r.Get("/concerts/{id}", h.Find)
 	r.Post("/concerts", h.Create)
 }

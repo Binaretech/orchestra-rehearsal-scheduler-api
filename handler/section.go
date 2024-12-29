@@ -55,7 +55,7 @@ func (h *SectionHandler) GetMusicians(ctx *router.Context) error {
 		Exclude: excludeIDs,
 	})
 
-	return ctx.JSON(http.StatusOK, Resource[model.User]{Data: musicians, Total: count})
+	return ctx.JSON(http.StatusOK, Collection[model.User]{Data: musicians, Total: count})
 }
 
 func (h *SectionHandler) GetById(ctx *router.Context) error {
