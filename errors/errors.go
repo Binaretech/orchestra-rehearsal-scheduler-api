@@ -11,15 +11,16 @@ const (
 
 	SECTION_NOT_FOUND = "section/not-found"
 
-	CONCERT_PAST_DATE = "concert/past-date"
+	INVALID_DATA_TYPE = "validation/invalid-data-type"
+
+	CONCERT_PAST_DATE           = "concert/past-date"
 	CONCERT_PAST_REHEARSAL_DATE = "concert/past-rehearsal-date"
 
 	INTERNAL_ERROR = "internal/error"
-
 )
 
 type AppError interface {
-	Code()  int
+	Code() int
 	Error() string
 	Message() string
 }
@@ -43,4 +44,3 @@ func (e BadRequestError) Error() string {
 func (e BadRequestError) Message() string {
 	return e.message
 }
-

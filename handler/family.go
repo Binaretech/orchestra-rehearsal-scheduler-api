@@ -22,6 +22,7 @@ func (h *FamilyHandler) GetAllData(ctx *router.Context) error {
 
 	return ctx.JSON(200, families)
 }
+
 func (h *FamilyHandler) Register(r *router.Router) {
 }
 

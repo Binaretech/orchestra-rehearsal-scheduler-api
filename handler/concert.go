@@ -18,7 +18,7 @@ type CreateConcertRequest struct {
 	Distribution  []service.ConcertDistribution `json:"distribution" validate:"required,dive"`
 	Title         string                        `json:"title" validate:"required"`
 	Location      string                        `json:"location" validate:"required"`
-	Date          string                        `json:"date" validate:"required,datetime=2006-01-02"`
+	Date          string                        `json:"date" validate:"required,datetime=2006-01-02T15:04:05"`
 	IsDefinitive  bool                          `json:"isDefinitive"`
 }
 
