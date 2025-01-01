@@ -14,11 +14,11 @@ import (
 // CreateConcertRequest holds the request payload to create a new concert
 type CreateConcertRequest struct {
 	Repertoire    []string                      `json:"repertoire" validate:"required,dive,required"`
-	RehearsalDays []string                      `json:"rehearsalDays" validate:"required,dive,required,datetime=2006-01-02T15:04:05"`
+	RehearsalDays []string                      `json:"rehearsalDays" validate:"required,dive,required,datetime=2006-01-02T15:04:05.000Z"`
 	Distribution  []service.ConcertDistribution `json:"distribution" validate:"required,dive"`
 	Title         string                        `json:"title" validate:"required"`
 	Location      string                        `json:"location" validate:"required"`
-	Date          string                        `json:"date" validate:"required,datetime=2006-01-02T15:04:05"`
+	Date          string                        `json:"date" validate:"required,datetime=2006-01-02T15:04:05.000Z"`
 	IsDefinitive  bool                          `json:"isDefinitive"`
 }
 
@@ -55,17 +55,17 @@ func (h *ConcertHandler) Create(ctx *router.Context) error {
 		return err
 	}
 
-	parsedDate, err := time.Parse("2006-01-02", body.Date)
+	parsedDate, err := time.Parse("2006-01-02T15:04:05.000Z", body.Date)
 	if err != nil {
 		return err
 	}
-	now := time.Now().Truncate(24 * time.Hour)
+	now := time.Now().UTC()
 	if parsedDate.Before(now) {
 		return errors.NewBadRequestError(errors.CONCERT_PAST_DATE)
 	}
 
 	for _, dayStr := range body.RehearsalDays {
-		parsedDay, err := time.Parse("2006-01-02T15:04:05", dayStr)
+		parsedDay, err := time.Parse("2006-01-02T15:04:05.000Z", dayStr)
 		if err != nil {
 			return err
 		}
